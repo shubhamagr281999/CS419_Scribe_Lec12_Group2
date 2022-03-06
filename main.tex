@@ -1,0 +1,315 @@
+\documentclass[11pt, twosides]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{graphics}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{xcolor}
+\setlength{\oddsidemargin}{0.25 in}
+\setlength{\evensidemargin}{-0.25 in}
+\setlength{\topmargin}{-0.6 in}
+\setlength{\textwidth}{6.5 in}
+\setlength{\textheight}{8.5 in}
+\setlength{\headsep}{0.75 in}
+\setlength{\parindent}{0 in}
+\setlength{\parskip}{0.1 in}
+
+\newcounter{lecnum}
+\renewcommand{\thepage}{\thelecnum-\arabic{page}}
+\renewcommand{\thesection}{\thelecnum.\arabic{section}}
+\renewcommand{\theequation}{\thelecnum.\arabic{equation}}
+\renewcommand{\thefigure}{\thelecnum.\arabic{figure}}
+\renewcommand{\thetable}{\thelecnum.\arabic{table}}
+
+\newcommand{\lecture}[4]{
+%   \pagestyle{myheadings}
+   \thispagestyle{plain}
+   \newpage
+   \setcounter{lecnum}{#1}
+   \setcounter{page}{1}
+   \noindent
+   \begin{center}
+   \framebox{
+      \vbox{\vspace{2mm}
+    \hbox to 6.28in { {\bf CS 419M Introduction to Machine Learning
+                        \hfill Spring 2021-22} }
+       \vspace{4mm}
+       \hbox to 6.28in { {\Large \hfill Lecture #1: #2  \hfill} }
+       \vspace{2mm}
+       \hbox to 6.28in { {\it Lecturer: #3 \hfill Scribe: #4} }
+      \vspace{2mm}}
+   }
+   \end{center}
+   \markboth{Lecture #1: #2}{Lecture #1: #2}
+}
+
+\newtheorem{theorem}{Theorem}[lecnum]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+
+\begin{document}
+
+\lecture{12}{Non-linear Classification using Kernels}{Abir De}{Group 2}
+
+%start copying from here
+\section{Introducing Kernel for non-linear Classification}
+The SVM optimization problem in Dual is to maximise $J$ where
+
+\begin{equation}
+    J= \sum_{i \in D} \alpha_i - \frac{1}{2}\sum_{i \in D} \sum_{j \in D} \alpha_i\alpha_j y_i y_j x_i^T x_j
+\end{equation}
+
+subject to constraints (2) and (3):
+
+\begin{equation}
+    0 \le \alpha \le c \text{    } \forall \textbf{    } i \in D
+\end{equation}
+
+\begin{equation}
+    \sum_{i \in D} \alpha_i y_i= 0
+\end{equation}
+
+We note that $\beta_i= c- \alpha_i$.
+\hfill \break
+The present formulation of SVM cannot separate data-points which are not linearly separable. We transform the data-point to a higher dimensional space using operator $\Phi$, where the data-points are linearly separable.
+\hfill \break
+We define a kernel function which describes the inner-product of data-points in the higher-dimensional space.
+
+\begin{equation}
+    ker(x_i, x_j)= \Phi(x_i)^T\Phi(x_j)
+ \end{equation}
+
+An example of a kernel function is $ker(x_i, x_j)= (x_i^Tx_j+1)^2$. Next, we will find the expression for transformation $\Phi$ for this kernel. We have,
+
+\begin{equation}
+\begin{split}
+    ker(x_i, x_j) & = (x_i^Tx_j+1)^2\\
+                & = x_i^Tx_jx_j^Tx_i+ 2x_i^Tx_j+1\\
+                & = trace(x_i^Tx_jx_j^Tx_i)+  2x_i^Tx_j+1
+    \end{split}            
+\end{equation}
+
+\text{Using the result that $trace(A_1A_2A_3A_4)= trace(A_2A_3A_4A_1)$, we get}
+
+\begin{equation}
+    \begin{split}
+       ker(x_i, x_j) &= trace (x_jx_j^Tx_ix_i^T) + 2x_i^Tx_j+1\\
+    \end{split}
+\end{equation}
+
+Define matrices $A= x_jx_j^T$ and $B= x_ix_i^T$. We note that B is a symmetric matrix. Then we have
+\begin{equation}
+    \begin{split}
+        ker(x_i, x_j) &=trace(AB) +  2x_i^Tx_j+1\\
+        & = \sum_{t,k} A_{tk}B_{kt} +  2x_i^Tx_j+1\\
+        & = \sum_{t,k} A_{tk}B_{tk} +  2x_i^Tx_j+1\\
+        & = {\begin{bmatrix}
+(x_jx_j^T)_{11} \\
+(x_jx_j^T)_{12} \\
+(x_jx_j^T)_{13} \\
+(x_jx_j^T)_{14} \\
+\cdot\\
+\cdot\\
+(x_jx_j^T)_{nn} 
+\end{bmatrix}}^T
+\begin{bmatrix}
+ (x_ix_i^T)_{11} \\
+(x_ix_i^T)_{12}\\
+ (x_ix_i^T)_{13}\\
+ (x_ix_i^T)_{14}\\
+ \cdot\\
+\cdot\\
+ (x_ix_i^T)_{nn}
+\end{bmatrix} +  2x_i^Tx_j+1
+    \end{split}
+\end{equation}
+\hfill \break
+Using mathematical induction techniques, we can also prove that $(x_i^Tx_j+1)^d= \Phi(x_i)^T\Phi(x_j)$ for some transformation $\Phi$.
+
+\begin{flushleft}
+Q. \textbf{Can we write $e^{x_i^Tx_j}$ as  a kernel?}\\
+Ans. \color{blue}
+To write the function $e^{x_i^Tx_j}$ as a kernel, we need to find a feature map $\Phi$, such that $e^{x_i^Tx_j} = \Phi(x_i)\Phi(x_j)^T$.
+Therefore, using the Taylor series expansion, it will be an infinite polynomial, $1 + x_i^Tx_j + \cfrac{(x_i^Tx_j)^2}{2!} + \cfrac{(x_i^Tx_j)^3}{3!} + \ldots$ \\ 
+Thus, we can make a feature map which is infinitely long such that $e^{x_i^Tx_j} = \Phi(x_i)\Phi(x_j)^T$.
+\end{flushleft}
+
+\begin{flushleft}
+Q. \textbf{Can we write any $F(x_i, x_j)$ as a kernel?} \\
+Ans. \color{blue}
+A property of kernels is that they are linear, that is, $\alpha_1 K_1(x_1, x_2) + \alpha_2 K_2 (x_1, x_2) \rightarrow K_3(x_1, x_2)$ as long as $\alpha_1, \alpha_2 > 0$.
+\\
+Since we can write any function $F(x_i, x_j)$ as a polynomial using Taylor Series expansion, 
+\begin{align*}
+    F(X^TX') & = \sum_{n = 0}^{\infty} a_n (X^TX')^n \\
+    & = \sum_{n = 0}^{\infty} a_n \Phi_n(X)^T\Phi_n(X') 
+\end{align*}
+And $a_n \geq 0 \; \forall \; n$.\\
+So, using the linear property of kernels we can write the function as a kernel as long as its Taylor series converges for $n \rightarrow \infty$ and its coefficients of the series expansion are all non-negative.
+\end{flushleft}
+
+\section{Properties of a Kernel}
+The kernel function $K$ has following properties.
+
+\begin{itemize}
+
+\item $K(x_i, x_j)= \Phi(x_i)^T\Phi(x_j)$ where $\Phi$ is a transformation.
+    \item $K(x, x) \ge 0$
+    
+    \hfill \break 
+    Proof: 
+    \hfill \break
+    We have,
+    \begin{align*}
+    K(x_1, x_2) & = \Phi(x_1)^T\Phi(x_2) \\
+    K(x, x) & = ||\Phi(x)||^2 \geq 0
+    \end{align*}
+
+   
+
+\item
+
+A kernel satisfies following inequality $$\sum_{i = 0, j = 0}^{n, n} c_i c_j K(x_i, x_j) \geq 0 \; \; \forall \; \; c_i, c_j \in \mathbb{R}$$
+\\ \\
+If we define a matrix $A$ such that $A_{ij} = K(x_i, x_j)$.
+Then from the previous inequality, we have 
+    \[
+    \sum_{i = 0, j = 0}^{n, n} c_i c_j K(x_i, x_j) & \geq 0
+    \]
+    \[
+    \sum_{i = 0, j = 0}^{n, n} c_i c_j A_{ij} & \geq 0
+    \]
+   \[ c^TAc \geq 0  \text{        }\forall \text{    }c \in \mathbb{R}^n
+    \]
+Therefore, the matrix $A$ will be a positive semi-definite matrix.
+Since, it is a positive semi-definite matrix, we can write $A = Q \wedge Q^T$, where $Q$ is an orthogonal matrix.
+ 
+\end{itemize}
+\section{Homework exercises:}
+
+\begin{flushleft}
+Q1. \textbf{Suppose $K_1(x-x')$ is the form of the kernel $K(x,x')$. Then show that we can decompose $K_1(x-x')$ as $\Phi(x)^T.\Phi(x')$. }\\
+\end{flushleft}
+
+\begin{flushleft}
+Q2. \textbf{If $K(x,x')$ is a positive semi-definite kernel satisfying $\sum_{j=1}^{n}\sum_{i=1}^{n} C_i.C_j.K(x_i,x_j) \geq 0$, then can we prove that $K(x,x') = \Phi(x)^T.\Phi(x')$?\\ (\textit{If needed, assume additional constraints on $K(x,x')$)}} \\
+\end{flushleft}
+
+
+\begin{flushleft}
+Q. \textbf{If $K_1(x,x')$ and $K_2(x,x')$ are kernels, then would $K(x,x') = K_1(x,x').K_2(x,x')$ be a kernel?} \\
+Ans. \color{blue}
+Yes, it would be. The proof proceeds as follows, 
+\begin{equation}
+\begin{split}
+    K(x, x') & = K_1(x,x').K_2(x,x') \\
+             & = \Phi_1(x)^T.\Phi_1(x').\Phi_2(x)^T.\Phi_2(x') \\ 
+             & = \Phi_1(x)^T.\Phi_1(x').\Phi_2(x')^T.\Phi_2(x) \\ 
+             & = Tr[\Phi_1(x)^T.\Phi_1(x').\Phi_2(x')^T.\Phi_2(x)] \\ 
+             & = Tr[\Phi_2(x).\Phi_1(x)^T.\Phi_1(x').\Phi_2(x')^T] \\ 
+             & = Tr[A(x).A^T(x')] 
+    \end{split}            
+\end{equation}
+
+
+This is of the form $\Phi(x)^T.\Phi(x')$ as required.
+
+\textit{(Similar to the proof of the result: $(x_ix_j)^2$ is a kernel)}
+\end{flushleft}
+
+Note:
+If the kernel is real:
+\begin{alignat}{2}
+     & \Rightarrow K(x_i, x_j) && = (K(x_i, x_j))^*\\
+     & \Rightarrow \Phi(x_i)*\Phi(x_j) && = (\Phi(x_i)^*\Phi(x_j))^*\\
+     & \Rightarrow \Phi(x_i)^T \Phi(x_j) && = \Phi(x_j)^T\Phi(x_i)\\
+     & \Rightarrow K(x_i, x_j) &&= K(x_j, x_i)
+\end{alignat}
+
+Therefore, if the kernel is real, it is symmetric.
+
+\section{Regularising Kernel}
+The original optimization objective function that we started with for finding an optimal $w$ was:
+
+  \[ \min_{w} \sum_{i=1}^{n} l(w^T\Phi(x_i, y_i) ) + \lambda \left \| w \right \| ^2 \]
+In most deep learning applications, $w$ is of very large dimension leading to an infinite dimension kernel which is not ideal for implementation. 
+
+Hence, we look for a method for regularising kernel which would serve the same purpose as of regularising w. This means we need to look for a function R such that \textbf{"R(f(x))"} acts as a regulariser where $"F(x) = w^T\Phi(x)"$
+
+Suppose,
+
+\begin{equation}
+    \Phi(x_i) = \begin{bmatrix}
+0\\ 
+0\\ 
+.\\ 
+.\\ 
+1\\ 
+.\\ 
+.\\
+0\\ 
+
+\end{bmatrix}
+\end{equation}
+where 1 is in the $i^{th}$ position 
+
+\begin{equation}
+\begin{split}
+    F(x_1) & = w_1 \\
+    F(x_2) & = w_2 \\
+    . & . \\
+    . & . \\
+    \end{split}            
+\end{equation}
+and so on
+
+then, $F^2(x_1) + F^2(x_2) + ....$ would act as $R(F(x))$
+
+Therefore, $R(F(x)) = \int_{\mathbb{R}^d}^{} C(x) F^2(x) dx$ \\
+where $C(x_i) = \begin{bmatrix}
+0\\ 
+0\\ 
+.\\ 
+.\\ 
+1\\ 
+.\\ 
+.\\
+0\\ 
+
+\end{bmatrix}$
+
+where 1 is in the $i^{th}$ position 
+
+
+Note: 
+Although we solved the classification problem posing as a dual problem, we prefer primal as $\alpha_i's$ are not super stable and doesn't perform good in test case. 
+
+
+
+
+
+
+\section{Group Details}
+
+
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+ \hline
+ 200070007 & Anmol Saraf  \\ 
+ \hline
+ 200070087 & Vadapalli Arvind Narasimha  \\  
+ \hline
+ 180040100 & Shubham Agrawal \\ 
+ \hline
+ 180260029 & Saanika Choudhary \\
+ \hline
+ 190070023 & Garweet Sresth \\
+ \hline
+\end{tabular}
+\end{center}
+\end{document}
